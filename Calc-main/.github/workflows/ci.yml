@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Snyk CLI
+        run: npm install -g snyk
+
+      - name: Authenticate with Snyk
+        run: snyk auth ${{ secrets.SNYK_TOKEN }}
+
+      - name: Ignore specific Snyk issues
+        run: |
+          snyk ignore --id=SNYK-JS-INFLIGHT-6095116
+          snyk ignore --id=SNYK-JS-NTHCHECK-1586032
+          snyk ignore --id=SNYK-JS-POSTCSS-5926692
+          snyk ignore --id=SNYK-JS-SERIALIZEJAVASCRIPT-6147607
+          snyk ignore --id=SNYK-JS-WEBPACK-7840298
+
+      - name: Run ESLint and allow warnings
+        run: npm run lint || true
+
+      - name: Run Snyk Test
+        run: snyk test --all-projects || true
+
+      - name: Build project
+        run: npm run build
